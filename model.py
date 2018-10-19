@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import ptb_preprocessing as pp
+import preprocessing as pp
 sess = tf.InteractiveSession()
 
 data, vocabulary, rosetta = pp.preprocess()
