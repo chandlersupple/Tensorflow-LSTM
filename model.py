@@ -1,10 +1,18 @@
+# Chandler Supple, 10-18-18
+
+# The following model had an accuracy of 97.6%.
+# Store the 'ptb.char.train.txt' file in your working directory.
+
+# Libraries
 import numpy as np
 import tensorflow as tf
 import preprocessing as pp
 sess = tf.InteractiveSession()
 
+# Data Preprocessing
 data, vocabulary, rosetta = pp.preprocess()
 
+# LSTM model
 class LSTM():  
     def __init__(self, num_layers, hidden_units, time_steps, batch_size, vocabulary, rosetta):
         self.d_out = tf.placeholder_with_default(0.5, [])
@@ -40,6 +48,7 @@ class LSTM():
             num_correct = tf.equal(resh_logits, tf.reshape(self.y, [-1]))
             self.accuracy = tf.reduce_mean(tf.cast(num_correct, tf.float32))
             
+            # L2 regularization
             loss = tf.contrib.seq2seq.sequence_loss(self.resh_fc, self.y, tf.ones([self.batch_size, self.time_steps]), average_across_timesteps= False)
             l_two_reg = tf.contrib.layers.l2_regularizer(0.005)
             t_vars = tf.trainable_variables()
@@ -73,9 +82,8 @@ class LSTM():
         
         return word_out
 
-    def sample(self, gen_words):
-        num_seed = list(np.random.randint(0, len(self.vocabulary) - 1, [self.time_steps]))
-        num_words = [num_seed]
+    def sample(self, seed, gen_words): # Given a seed, 'sample' generates text.
+        num_words = [seed]
         lgs = sess.run(self.resh_fc, feed_dict= {self.d_out: 1.0, self.x: num_words})
         lgs_wi = np.argmax(lgs[0][-1])
         num_words[0].append(lgs_wi)
@@ -87,6 +95,7 @@ class LSTM():
         
         return self.nums_words(num_words[0])
         
+# Model parameters
 batch_size = 16
 time_steps = 32
 hidden_units = 256
@@ -94,11 +103,12 @@ num_layers = 2
 epochs = 128
 batches_in_epoch = len(data) // batch_size
 
+# Model instances -- 'sample_lstm' will be used to sample text
 lstm = LSTM(num_layers, hidden_units, time_steps, batch_size, vocabulary, rosetta)
 sample_lstm = LSTM(num_layers, hidden_units, time_steps, 1, vocabulary, rosetta)
 
-saver = tf.train.Saver()
-samples = []
+saver = tf.train.Saver() # Saves model
+samples = [] # A sample will be generated at every 10,000 batches and appended to 'samples'
 
 for epoch_iter in range (epochs):
     for batch_iter in range (batches_in_epoch - time_steps):
@@ -109,6 +119,7 @@ for epoch_iter in range (epochs):
             accuracy = sess.run(lstm.accuracy, feed_dict= {lstm.d_out: 1.0, lstm.x: batch_x, lstm.y: batch_y})
             print('Epoch: %s, Batch %s / %s, Perplexity: %s, Accuracy: %s' %(epoch_iter, batch_iter, batches_in_epoch, loss, accuracy))
         if batch_iter % 10000 == 0:
-            saver.save(sess, '/Users/Masterchief7269/Desktop/Programming Header/Python/Models/PTB_LSTM/ptblstm')
-            sample = sample_lstm.sample(100)
+            saver.save(sess, 'path') # REPLACE 'path' with an appropriate path where you'd like the saved model to be stored
+            sample = sample_lstm.sample(batch_x[0], 100)
             samples.append(''.join(sample))
+            
