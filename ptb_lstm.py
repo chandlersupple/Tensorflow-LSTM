@@ -1,6 +1,9 @@
 import numpy as np
 import tensorflow as tf
+import ptb_preprocessing as pp
 sess = tf.InteractiveSession()
+
+data, vocabulary, rosetta = pp.preprocess()
 
 class LSTM():  
     def __init__(self, num_layers, hidden_units, time_steps, batch_size, vocabulary, rosetta):
